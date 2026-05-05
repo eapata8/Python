@@ -1,0 +1,58 @@
+1. Isolation between local code and installed package (False Positives)
+Flat layout: Tests import local code by default, which can hide packaging issues—but this also makes quick iteration easier during development.
+Src layout: Forces installation before imports work, catching packaging errors early.
+Workaround: Flat → use tox for isolation. Src → use editable install or PYTHONPATH.
+
+2. Import namespace cleanliness
+Flat layout: Risk of importing unintended files from the root directory, but this is rarely an issue in small or controlled projects.
+Src layout: Cleaner separation by design.
+Trade-off: Flat is simpler; src is stricter.
+
+3. Handling duplicate module/test names
+Flat layout: More prone to conflicts depending on test discovery behavior.
+Src layout: Reduces ambiguity but does not eliminate it.
+Workaround: Use pytest --import-mode=importlib in both cases.
+
+4. Distribution manifest integrity (MANIFEST.in)
+Flat layout: Missing files may go unnoticed locally, but this is less critical if the project is not meant for distribution.
+Src layout: Detects missing files early through installation.
+Trade-off: Flat is fine for internal tools; src is safer for packages.
+
+5. Running scripts and CLI from source
+Flat layout: Works immediately with no setup, which is very convenient for scripts and small tools.
+Src layout: Requires setup before execution.
+Advantage: Flat layout is better for quick execution and prototyping.
+
+6. Setup.py dependency issue (chicken-and-egg problem)
+Flat layout: More flexible but can lead to fragile setups if not handled carefully.
+Src layout: Encourages safer practices.
+Trade-off: Flat offers convenience; src enforces discipline.
+
+7. Risk of implicit dependencies
+Flat layout: Allows faster experimentation, but can hide missing dependencies.
+Src layout: Forces correctness early.
+Trade-off: Flexibility vs reliability.
+
+8. Environment reproducibility (CI/CD)
+Flat layout: May differ between environments, but acceptable for small or non-critical projects.
+Src layout: More consistent across environments.
+
+9. Project scalability
+Flat layout: Works well for small projects or single-module scripts.
+Src layout: Better suited for larger, growing codebases.
+
+10. Maintainability and onboarding
+Flat layout: Easier to understand initially due to simplicity.
+Src layout: Clearer structure over time, especially in teams.
+
+11. Compatibility with modern tools
+Flat layout: Still supported and widely used for simple use cases.
+Src layout: Better aligned with modern packaging standards.
+
+12. Security and accidental imports
+Flat layout: Slightly higher risk, but manageable in simple repos.
+Src layout: Safer by design.
+
+13. Developer experience (DX)
+Flat layout: Faster to start, minimal setup, ideal for quick scripts and prototypes.
+Src layout: Slightly more setup, but more predictable behavior long-term.
