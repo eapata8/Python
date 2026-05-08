@@ -1,0 +1,27 @@
+The most interesting part to me was the entity resolution pipeline (deterministic matching + probabilistic linkage with Splink + LLM-verified golden records) used to reconcile the same organization appearing under dozens of name variants across datasets.
+
+The deterministic approach seems useful for quickly resolving exact matches, but it becomes limited with real-world data because of:
+
+* typos,
+* naming variations,
+* acronyms,
+* and inconsistent formatting.
+
+That is where the probabilistic approach with Splink becomes interesting.
+Instead of relying only on strict matching rules, the system calculates match probabilities, which allows for more flexible and nuanced matching while reducing some false positives and false negatives.
+
+The LLM layer then seems to act as an additional semantic/contextual validation step for the most ambiguous cases that are harder to resolve using purely statistical approaches.
+
+I think the main strength of the pipeline is the combination of the three approaches together, since each one helps compensate for some of the limitations of the others.
+
+One possible improvement could be adding a lightweight human QA/audit sampling step at the end of the pipeline to randomly review a subset of LLM decisions in order to monitor quality and detect potential linkage errors or incorrect merges.
+
+A similar approach could potentially be useful in our own databases for fraud detection or analytics use cases.
+
+Another interesting aspect is the explainability of the system.
+
+The project seems to rely on scoring models rather than a simple fraud/non-fraud binary classification. This likely helps reduce some biases and makes the results easier to explain, audit, and review manually since the scores are based on explicit and interpretable signals.
+
+This also seems useful for risk prioritization and for providing more tangible evidence when reviewing flagged cases.
+
+However, the system is probably not fully explainable end-to-end because the final LLM layer remains relatively opaque compared to the probabilistic and statistical parts of the pipeline, and realistically not all decisions could be manually verified at scale.
