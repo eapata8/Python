@@ -1,3 +1,71 @@
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parent
+
+
+def run(cmd, cwd):
+    print(f"\n$ {' '.join(map(str, cmd))}")
+    result = subprocess.run(cmd, cwd=cwd, text=True, capture_output=True)
+
+    if result.stdout:
+        print(result.stdout)
+
+    if result.stderr:
+        print(result.stderr)
+
+    print("Return code:", result.returncode)
+    return result.returncode
+
+
+print("PROJECT ROOT:", ROOT)
+
+print("\n=== 1) Test local depuis flat_example ===")
+print("Ici Python voit directement le dossier calculator/ car on est à la racine du projet.")
+
+run(
+    [sys.executable, "-m", "unittest", "discover", "-s", "tests"],
+    cwd=ROOT,
+)
+
+print("\n=== 2) Création d'un environnement propre ===")
+
+with tempfile.TemporaryDirectory() as tmp:
+    tmp = Path(tmp)
+    venv = tmp / "venv"
+    outside = tmp / "outside"
+    outside.mkdir()
+
+    run([sys.executable, "-m", "venv", venv], cwd=ROOT)
+
+    if sys.platform == "win32":
+        python_venv = venv / "Scripts" / "python.exe"
+    else:
+        python_venv = venv / "bin" / "python"
+
+    print("\n=== 3) Installation réelle du package ===")
+    run([python_venv, "-m", "pip", "install", "."], cwd=ROOT)
+
+    print("\n=== 4) Import depuis un dossier extérieur ===")
+    print("Ici Python ne voit plus calculator/ localement.")
+    print("Il ne peut utiliser que ce qui a vraiment été installé.")
+
+    run(
+        [
+            python_venv,
+            "-c",
+            "from calculator.operations import addition; print(addition(2, 3))",
+        ],
+        cwd=outside,
+    )
+
+print("\nConclusion:")
+print("Si le test local passe mais que l'import extérieur échoue,")
+print("ça prouve que le flat layout a caché un problème de packaging.")
+
 1. Isolation between local code and installed package (False Positives)
 Flat layout: Tests import local code by default, which can hide packaging issues—but this also makes quick iteration easier during development.
 Src layout: Forces installation before imports work, catching packaging errors early.
