@@ -1,0 +1,126 @@
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+SRC = ROOT / "src_example"
+
+
+def run(cmd, cwd):
+    print("\n$", " ".join(map(str, cmd)))
+    subprocess.run(cmd, cwd=cwd)
+
+
+def bad_toml():
+    (SRC / "pyproject.toml").write_text("""
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "calculator"
+version = "2026.0.0"
+
+[tool.setuptools]
+packages = []
+""")
+
+
+def good_toml():
+    (SRC / "pyproject.toml").write_text("""
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "calculator"
+version = "2026.0.0"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+""")
+
+
+bad_toml()
+
+print("\nLocal test without install")
+
+run(
+    [sys.executable, "-m", "unittest", "discover", "-s", "tests"],
+    SRC,
+)
+
+with tempfile.TemporaryDirectory() as tmp:
+
+    venv = Path(tmp) / "venv"
+    outside = Path(tmp) / "outside"
+
+    outside.mkdir()
+
+    run(
+        [sys.executable, "-m", "venv", str(venv)],
+        SRC,
+    )
+
+    python = venv / "bin" / "python"
+
+    print("\nInstall broken package")
+
+    run(
+        [str(python), "-m", "pip", "install", "."],
+        SRC,
+    )
+
+    print("\nImport from root")
+
+    run(
+        [
+            str(python),
+            "-c",
+            "from calculator.operations import addition; print(addition(2,3))",
+        ],
+        SRC,
+    )
+
+    print("\nImport from outside")
+
+    run(
+        [
+            str(python),
+            "-c",
+            "from calculator.operations import addition; print(addition(2,3))",
+        ],
+        outside,
+    )
+
+    good_toml()
+
+    print("\nReinstall fixed package")
+
+    run(
+        [str(python), "-m", "pip", "install", "--force-reinstall", "."],
+        SRC,
+    )
+
+    print("\nImport from root again")
+
+    run(
+        [
+            str(python),
+            "-c",
+            "from calculator.operations import addition; print(addition(2,3))",
+        ],
+        SRC,
+    )
+
+    print("\nImport from outside again")
+
+    run(
+        [
+            str(python),
+            "-c",
+            "from calculator.operations import addition; print(addition(2,3))",
+        ],
+        outside,
+    )
