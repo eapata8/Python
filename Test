@@ -1,3 +1,62 @@
+import importlib
+import importlib.metadata
+import importlib.util
+import unittest
+
+PACKAGE_NAME = "aidRepo"
+
+EXPECTED_TOP_LEVEL = {
+    "common",
+    "evaluation",
+    "inference",
+    "main",
+    "ml_pipeline",
+    "preprocessing",
+    "training",
+}
+
+
+class TestPackaging(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dist = importlib.metadata.distribution(PACKAGE_NAME)
+
+    def test_package_is_installed(self):
+        self.assertIsNotNone(self.dist)
+        self.assertIsNotNone(importlib.util.find_spec(PACKAGE_NAME))
+
+    def test_top_level_entities(self):
+        top_level = set(
+            self.dist.read_text("top_level.txt").splitlines()
+        )
+
+        self.assertEqual(top_level, EXPECTED_TOP_LEVEL)
+
+        for module in EXPECTED_TOP_LEVEL:
+            with self.subTest(module=module):
+                self.assertIsNotNone(importlib.import_module(module))
+
+    def test_distribution_contains_only_sources(self):
+        files = {str(f) for f in self.dist.files}
+
+        self.assertIn("main.py", files)
+
+        for module in EXPECTED_TOP_LEVEL - {"main"}:
+            self.assertIn(f"{module}/__init__.py", files)
+
+        for file in files:
+            self.assertFalse(
+                file.startswith("tests/"),
+                f"Unexpected test file in package: {file}",
+            )
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
+
+
+
 import subprocess
 import sys
 import tempfile
